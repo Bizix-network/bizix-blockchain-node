@@ -42,7 +42,7 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
-pub use pallet_template;
+pub use bizix_core;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -245,10 +245,10 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-/// Configure the pallet-template in pallets/template.
-impl pallet_template::Config for Runtime {
+/// Configure the bizix-core in pallets/bizix.
+impl bizix_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = bizix_core::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -289,9 +289,9 @@ mod runtime {
 	#[runtime::pallet_index(6)]
 	pub type Sudo = pallet_sudo;
 
-	// Include the custom logic from the pallet-template in the runtime.
+	// Include the custom logic from the bizix-core in the runtime.
 	#[runtime::pallet_index(7)]
-	pub type TemplateModule = pallet_template;
+	pub type TemplateModule = bizix_core;
 }
 
 /// The address format for describing accounts.
@@ -341,7 +341,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_template, TemplateModule]
+		[bizix_core, TemplateModule]
 	);
 }
 

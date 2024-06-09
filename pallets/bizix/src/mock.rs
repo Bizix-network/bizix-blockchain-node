@@ -1,4 +1,4 @@
-use crate as pallet_template;
+use crate as bizix_core;
 use frame_support::{
 	derive_impl,
 	traits::{ConstU16, ConstU64},
@@ -16,7 +16,7 @@ frame_support::construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system,
-		TemplateModule: pallet_template,
+		TemplateModule: bizix_core,
 	}
 );
 
@@ -47,7 +47,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl pallet_template::Config for Test {
+impl bizix_core::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }

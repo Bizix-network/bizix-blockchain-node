@@ -1,4 +1,4 @@
-//! Benchmarking setup for pallet-template
+//! Benchmarking setup for bizix-core
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
 
