@@ -32,6 +32,7 @@ pub use frame_support::{
 		IdentityFee, Weight,
 	},
 	StorageValue,
+	BoundedVec,
 };
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -143,6 +144,11 @@ parameter_types! {
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
+
+	// Tipuri de date pentru bizix-core
+    pub const MaxIpfsAddressLength: u32 = 256;
+    pub const MaxAppNameLength: u32 = 128;
+    pub const MaxAppVersionLength: u32 = 32;
 }
 
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
@@ -245,10 +251,15 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-/// Configure the bizix-core in pallets/bizix.
+// Configure the bizix-core in pallets/bizix.
 impl bizix_core::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = bizix_core::weights::SubstrateWeight<Runtime>;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = bizix_core::weights::SubstrateWeight<Runtime>;
+    type IPFSAddress = Vec<u8>;
+    type ApplicationName = Vec<u8>;
+    type ApplicationVersion = Vec<u8>;
+    type ProposalPrice = Balance;
+    type ProxmoxTemplateID = u32;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -291,7 +302,7 @@ mod runtime {
 
 	// Include the custom logic from the bizix-core in the runtime.
 	#[runtime::pallet_index(7)]
-	pub type TemplateModule = bizix_core;
+	pub type BizixCore = bizix_core;
 }
 
 /// The address format for describing accounts.
@@ -341,7 +352,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[bizix_core, TemplateModule]
+		[bizix_core, BizixCore]
 	);
 }
 
