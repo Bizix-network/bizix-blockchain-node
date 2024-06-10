@@ -67,6 +67,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_std::vec::Vec;
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -87,6 +88,7 @@ pub mod pallet {
 	   type ApplicationVersion: Parameter + Member + Default + Clone;
 	   type ProposalPrice: Parameter + Member + Default + Copy;
 	   type ProxmoxTemplateID: Parameter + Member + Default + Clone;
+	   //type TechnicalCouncilOrigin: EnsureOrigin<Self::RuntimeOrigin>;
    }
 
    #[pallet::pallet]
@@ -118,24 +120,45 @@ pub mod pallet {
    #[pallet::getter(fn proposal_count)]
    pub type ProposalCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+   #[pallet::storage]
+   #[pallet::getter(fn proposals)]
+   pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, u32, Proposal<T>>;
+
+   #[pallet::storage]
+   #[pallet::getter(fn current_proposal_id)]
+   pub type CurrentProposalId<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+   #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+    pub struct Proposal<T: Config> {
+        pub proposer: T::AccountId,
+        pub ipfs_address: T::IPFSAddress,
+        pub name: T::ApplicationName,
+        pub version: T::ApplicationVersion,
+        pub template_id: T::ProxmoxTemplateID,
+        pub status: ProposalStatusEnum,
+    }
+
    // Evenimente
-   #[pallet::event]
-   #[pallet::generate_deposit(pub(super) fn deposit_event)]
-   pub enum Event<T: Config> {
-	   ProposalSubmitted {
-		   who: T::AccountId,
-		   ipfs_address: T::IPFSAddress,
-		   name: T::ApplicationName,
-		   version: T::ApplicationVersion,
-		   template_id: T::ProxmoxTemplateID,
-	   },
-	   ProposalApproved {
-		   proposal_id: T::AccountId,
-	   },
-	   ProposalRejected {
-		   proposal_id: T::AccountId,
-	   },
-   }
+  #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        ProposalSubmitted {
+			proposal_id: u32,
+            who: T::AccountId,
+            ipfs_address: T::IPFSAddress,
+            name: T::ApplicationName,
+            version: T::ApplicationVersion,
+            template_id: T::ProxmoxTemplateID,
+        },
+        ProposalApproved {
+            proposal_id: u32,
+        },
+        ProposalRejected {
+            proposal_id: u32,
+        },
+		
+    }
 
    // Erori
    #[pallet::error]
@@ -166,51 +189,101 @@ pub mod pallet {
 	   ) -> DispatchResult {
 		   let sender = ensure_signed(origin)?;
 
+		   let proposal_id = CurrentProposalId::<T>::get();
+		   CurrentProposalId::<T>::put(proposal_id + 1);
+
 		   let proposal_count = ProposalCount::<T>::get();
+		   
+		   let proposal = Proposal {
+			proposer: sender.clone(),
+			ipfs_address: ipfs_address.clone(),
+			name: name.clone(),
+			version: version.clone(),
+			template_id: template_id.clone(),
+			status: ProposalStatusEnum::New,
+		};
 
 		   // Stochează individual fiecare câmp al propunerii
-		   ProposalIPFSAddress::<T>::put(ipfs_address.clone());
-		   ProposalName::<T>::put(name.clone());
-		   ProposalVersion::<T>::put(version.clone());
-		   ProposalTemplateID::<T>::put(template_id.clone());
-		   ProposalStatus::<T>::put(ProposalStatusEnum::New);
+		   //ProposalIPFSAddress::<T>::put(ipfs_address.clone());
+		   //ProposalName::<T>::put(name.clone());
+		   //ProposalVersion::<T>::put(version.clone());
+		   //ProposalTemplateID::<T>::put(template_id.clone());
+		   //ProposalStatus::<T>::put(ProposalStatusEnum::New);
 
 		   ProposalCount::<T>::put(proposal_count + 1);
-
+		   
+		   Proposals::<T>::insert(proposal_id, proposal);
 		   Self::deposit_event(Event::ProposalSubmitted {
-			   who: sender,
-			   ipfs_address,
-			   name,
-			   version,
-			   template_id,
-		   });
+			proposal_id,
+			who: sender,
+			ipfs_address,
+			name,
+			version,
+			template_id,
+			});
 
 		   Ok(())
 	   }
 
 	   #[pallet::call_index(1)]
 	   #[pallet::weight(10_000)]
-	   pub fn approve_proposal(origin: OriginFor<T>, proposal_id: T::AccountId) -> DispatchResult {
-		   let _sender = ensure_signed(origin)?;
-		   // TODO: Verifică dacă apelantul este membru al consiliului tehnic.
-
-		   // TODO:  Implementează logica de aprobare
-
+	   pub fn approve_proposal(
+		   origin: OriginFor<T>,
+		   proposal_id: u32
+	   ) -> DispatchResult {
+		   // Verifică dacă apelantul este membru al consiliului tehnic
+		   // T::TechnicalCouncilOrigin::ensure_origin(origin)?;
+   
+		   // Obține propunerea și actualizează starea
+		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> Result<(), DispatchError> {
+			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			   proposal.status = ProposalStatusEnum::Approved;
+			   Ok(())
+		   })?;
+   
 		   Self::deposit_event(Event::ProposalApproved { proposal_id });
-
+   
 		   Ok(())
 	   }
 	   
 	   #[pallet::call_index(2)]
 	   #[pallet::weight(10_000)]
-	   pub fn reject_proposal(origin: OriginFor<T>, proposal_id: T::AccountId) -> DispatchResult {
-		   let _sender = ensure_signed(origin)?;
-		   // TODO: Verifică dacă apelantul este membru al consiliului tehnic.
-
-		   // TODO:  Implementează logica de respingere
-
+	   pub fn reject_proposal(
+		   origin: OriginFor<T>,
+		   proposal_id: u32
+	   ) -> DispatchResult {
+		   // Verifică dacă apelantul este membru al consiliului tehnic
+		   //T::TechnicalCouncilOrigin::ensure_origin(origin)?;
+   
+		   // Obține propunerea și actualizează starea
+		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> Result<(), DispatchError> {
+			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			   proposal.status = ProposalStatusEnum::Rejected;
+			   Ok(())
+		   })?;
+   
 		   Self::deposit_event(Event::ProposalRejected { proposal_id });
+   
+		   Ok(())
+	   }
 
+	   #[pallet::call_index(3)]
+	   #[pallet::weight(10_000)]
+	   pub fn get_proposals_by_status(
+		   origin: OriginFor<T>,
+		   status: ProposalStatusEnum,
+	   ) -> DispatchResult {
+		   // Verifică dacă apelul provine de la un utilizator autorizat
+		   let _ = ensure_signed(origin)?;
+   
+		   // Colectează toate propunerile cu statusul specificat
+		   let proposals: Vec<(u32, Proposal<T>)> = Proposals::<T>::iter()
+			   .filter(|(_, proposal)| proposal.status == status)
+			   .collect();
+   
+		   // Emite un eveniment sau returnează rezultatele printr-o cale adecvată
+		   // (de exemplu, printr-un RPC personalizat)
+   
 		   Ok(())
 	   }
    }
