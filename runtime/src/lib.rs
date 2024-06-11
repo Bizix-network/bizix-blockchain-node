@@ -524,6 +524,12 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl bizix_core_runtime_api::BizixApi<Block> for Runtime {
+		fn get_value() -> u32 {
+			BizixCore::current_proposal_id()
+		}
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn benchmark_metadata(extra: bool) -> (

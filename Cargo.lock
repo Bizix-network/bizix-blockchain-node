@@ -809,6 +809,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizix-core-rpc"
+version = "0.0.1"
+dependencies = [
+ "bizix-core-runtime-api",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "bizix-core-runtime-api"
+version = "0.0.1"
+dependencies = [
+ "sp-api",
+]
+
+[[package]]
 name = "blake2"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4571,6 +4590,7 @@ checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 name = "node-template"
 version = "0.0.0"
 dependencies = [
+ "bizix-core-rpc",
  "clap",
  "frame-benchmarking-cli",
  "frame-system",
@@ -4615,6 +4635,7 @@ name = "node-template-runtime"
 version = "0.0.0"
 dependencies = [
  "bizix-core",
+ "bizix-core-runtime-api",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",

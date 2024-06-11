@@ -63,6 +63,7 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk.git
 
 # Local Dependencies
 node-template-runtime = { path = "../runtime" }
+bizix-core-rpc = { path = "../pallets/bizix/rpc" }
 
 # CLI-specific dependencies
 try-runtime-cli = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", optional = true }
