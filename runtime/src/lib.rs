@@ -42,8 +42,9 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-/// Import the template pallet.
+/// Import the bizix pallets.
 pub use bizix_core;
+pub use pallet_company_registry;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -262,6 +263,17 @@ impl bizix_core::Config for Runtime {
     type ProxmoxTemplateID = u32;
 }
 
+impl pallet_company_registry::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_company_registry::weights::SubstrateWeight<Runtime>;
+    type CUI = BoundedVec<u8, ConstU32<32>>;
+    type Denumire = BoundedVec<u8, ConstU32<128>>;
+    type CodInmatriculare = BoundedVec<u8, ConstU32<32>>;
+    type EUID = BoundedVec<u8, ConstU32<32>>;
+    type StareFirma = BoundedVec<u8, ConstU32<32>>;
+    type AdresaCompleta = BoundedVec<u8, ConstU32<256>>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -303,6 +315,9 @@ mod runtime {
 	// Include the custom logic from the bizix-core in the runtime.
 	#[runtime::pallet_index(7)]
 	pub type BizixCore = bizix_core;
+
+	#[runtime::pallet_index(8)]
+pub type CompanyRegistry = pallet_company_registry;
 }
 
 /// The address format for describing accounts.
@@ -353,6 +368,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
 		[bizix_core, BizixCore]
+		[pallet_company_registry, CompanyRegistry]
 	);
 }
 
