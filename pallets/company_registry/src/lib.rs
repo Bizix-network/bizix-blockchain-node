@@ -110,6 +110,7 @@ pub mod pallet {
 	   pub euid: T::EUID,
 	   pub stare_firma: T::StareFirma,
 	   pub adresa_completa: T::AdresaCompleta,
+	   pub owner: Option<T::AccountId>,
    }
 
    #[pallet::event]
@@ -117,12 +118,16 @@ pub mod pallet {
    pub enum Event<T: Config> {
 	   CompanyAdded { cui: T::CUI, sender: T::AccountId },
 	   CompanyUpdated { cui: T::CUI, sender: T::AccountId },
+	   CompanyClaimed { cui: T::CUI, owner: T::AccountId },
+	   CompanyOwnershipTransferred { cui: T::CUI, new_owner: T::AccountId },
    }
 
    #[pallet::error]
    pub enum Error<T> {
 	   CompanyAlreadyExists,
 	   CompanyNotFound,
+	   CompanyAlreadyClaimed,
+	   NotCompanyOwner,
    }
 
    // Funcții apelabile
@@ -150,6 +155,7 @@ pub mod pallet {
 			   euid,
 			   stare_firma,
 			   adresa_completa,
+			   owner: None,
 		   };
 
 		   Companies::<T>::insert(cui.clone(), company);
@@ -194,6 +200,51 @@ pub mod pallet {
 		   })?;
 
 		   Self::deposit_event(Event::CompanyUpdated { cui, sender });
+		   Ok(())
+	   }
+
+	   #[pallet::call_index(2)]
+	   #[pallet::weight(10_000)]
+	   pub fn claim_company(
+		   origin: OriginFor<T>,
+		   cui: T::CUI,
+	   ) -> DispatchResult {
+		   let claimer = ensure_signed(origin)?;
+   
+		   Companies::<T>::try_mutate(&cui, |maybe_company| -> DispatchResult {
+			   let company = maybe_company.as_mut().ok_or(Error::<T>::CompanyNotFound)?;
+			   
+			   ensure!(company.owner.is_none(), Error::<T>::CompanyAlreadyClaimed);
+   
+			   company.owner = Some(claimer.clone());
+   
+			   Ok(())
+		   })?;
+   
+		   Self::deposit_event(Event::CompanyClaimed { cui, owner: claimer });
+		   Ok(())
+	   }
+
+	   #[pallet::call_index(3)]
+	   #[pallet::weight(10_000)]
+	   pub fn transfer_company_ownership(
+		   origin: OriginFor<T>,
+		   cui: T::CUI,
+		   new_owner: T::AccountId,
+	   ) -> DispatchResult {
+		   let current_owner = ensure_signed(origin)?;
+   
+		   Companies::<T>::try_mutate(&cui, |maybe_company| -> DispatchResult {
+			   let company = maybe_company.as_mut().ok_or(Error::<T>::CompanyNotFound)?;
+			   
+			   ensure!(company.owner == Some(current_owner.clone()), Error::<T>::NotCompanyOwner);
+   
+			   company.owner = Some(new_owner.clone());
+   
+			   Ok(())
+		   })?;
+   
+		   Self::deposit_event(Event::CompanyOwnershipTransferred { cui, new_owner });
 		   Ok(())
 	   }
    }
