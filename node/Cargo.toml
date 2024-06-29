@@ -1,7 +1,7 @@
 [package]
-name = "node-template"
-description = "A solochain node template built with Substrate, part of Polkadot Sdk."
-version = "0.0.0"
+name = "bizix-node"
+description = "blockchain node for Next-Gen SaaS Solutionss for Business"
+version = "0.0.1"
 license = "MIT-0"
 authors.workspace = true
 homepage.workspace = true
@@ -62,7 +62,7 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk
 frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0" }
 
 # Local Dependencies
-node-template-runtime = { path = "../runtime" }
+bizix-node-runtime = { path = "../runtime" }
 bizix-core-rpc = { path = "../pallets/bizix/rpc" }
 
 # CLI-specific dependencies
@@ -78,7 +78,7 @@ runtime-benchmarks = [
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
-	"node-template-runtime/runtime-benchmarks",
+	"bizix-node-runtime/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 # Enable features that allow the runtime to be tried and debugged. Name might be subject to change
@@ -86,7 +86,7 @@ runtime-benchmarks = [
 try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-transaction-payment/try-runtime",
-	"node-template-runtime/try-runtime",
+	"bizix-node-runtime/try-runtime",
 	"sp-runtime/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]

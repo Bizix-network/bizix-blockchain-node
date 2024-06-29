@@ -1,7 +1,7 @@
 [package]
-name = "node-template-runtime"
-description = "A solochain runtime template built with Substrate, part of Polkadot Sdk."
-version = "0.0.0"
+name = "bizix-node-runtime"
+description = "Next-Gen SaaS Solutionss for Business built with Substrate"
+version = "0.0.1"
 license = "MIT-0"
 authors.workspace = true
 homepage.workspace = true

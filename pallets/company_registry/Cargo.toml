@@ -1,7 +1,7 @@
 [package]
 name = "pallet-company-registry"
 description = "FRAME pallet for managing companys data."
-version = "0.0.0"
+version = "0.0.1"
 license = "MIT-0"
 authors.workspace = true
 homepage.workspace = true
