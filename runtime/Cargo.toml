@@ -24,6 +24,8 @@ scale-info = { version = "2.10.0", default-features = false, features = [
 	"serde",
 ] }
 
+getrandom = {version = "0.2", default-features = false, features = ["custom"]}
+
 # frame
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false, features = ["experimental"] }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
@@ -76,6 +78,7 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.
 # local pallets
 bizix-core = { path = "../pallets/bizix", default-features = false }
 pallet-company-registry = { path = "../pallets/company_registry", default-features = false }
+pallet-company-registry-rpc-runtime-api = { path = "../pallets/company_registry/rpc/runtime-api" }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", optional = true }

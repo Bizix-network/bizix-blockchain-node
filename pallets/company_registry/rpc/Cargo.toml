@@ -1,6 +1,6 @@
 [package]
-name = "bizix-core-rpc"
-description = "RPC for Bizix"
+name = "pallet-company-registry-rpc"
+description = "RPC for company registry"
 version = "0.0.1"
 license = "MIT-0"
 authors.workspace = true
@@ -27,12 +27,12 @@ sp-blockchain  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag =
 sp-runtime  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 
 #local package
-bizix-core-runtime-api = { path = "./runtime-api", default-features = false }
+pallet-company-registry-rpc-runtime-api = { path = "./runtime-api" }
 
 [features]
 default = ["std"]
 std = [
   "sp-api/std",
   "sp-runtime/std",
-  "bizix-core-runtime-api/std"
+  "pallet-company-registry-rpc-runtime-api/std"
 ]

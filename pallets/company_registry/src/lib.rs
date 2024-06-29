@@ -68,6 +68,9 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
+	use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement, Get};
+
+	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -78,19 +81,21 @@ pub mod pallet {
 	/// These types are defined generically and made concrete when the pallet is declared in the
 	/// `runtime/src/lib.rs` file of your chain.
 	#[pallet::config]
-    pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        type WeightInfo: WeightInfo;
- 
-       // Tipuri de date
-	   type CUI: Parameter + Member + Default + Clone;
-	   type Denumire: Parameter + Member + Default + Clone;
-	   type CodInmatriculare: Parameter + Member + Default + Clone;
-	   type EUID: Parameter + Member + Default + Clone;
-	   type StareFirma: Parameter + Member + Default + Clone;
-	   type AdresaCompleta: Parameter + Member + Default + Clone;
-
-   }
+	pub trait Config: frame_system::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type WeightInfo: WeightInfo;
+	 
+		// Tipuri de date
+		type CUI: Parameter + Member + Default + Clone;
+		type Denumire: Parameter + Member + Default + Clone;
+		type CodInmatriculare: Parameter + Member + Default + Clone;
+		type EUID: Parameter + Member + Default + Clone;
+		type StareFirma: Parameter + Member + Default + Clone;
+		type AdresaCompleta: Parameter + Member + Default + Clone;
+	
+		type Currency: Currency<Self::AccountId>;
+		type QueryFee: Get<BalanceOf<Self>>;
+	}
 
    #[pallet::pallet]
    #[pallet::without_storage_info]
@@ -248,4 +253,17 @@ pub mod pallet {
 		   Ok(())
 	   }
    }
+
+   // Implementare separată pentru metodele interne
+	impl<T: Config> Pallet<T> {
+		pub fn get_company_data(cui: T::CUI) -> Option<Company<T>> {
+			Companies::<T>::get(cui)
+		}
+
+		pub fn do_query(querier: T::AccountId) -> DispatchResult {
+			let fee = T::QueryFee::get();
+			T::Currency::withdraw(&querier, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive)?;
+			Ok(())
+		}
+	}
 }

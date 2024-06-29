@@ -22,8 +22,7 @@ use frame_support::genesis_builder_helper::{build_config, create_default_config}
 pub use frame_support::{
 	construct_runtime, derive_impl, parameter_types,
 	traits::{
-		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness,
-		StorageInfo,
+		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, StorageInfo,
 	},
 	weights::{
 		constants::{
@@ -41,10 +40,12 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+use frame_support::traits::Currency;
 
 /// Import the bizix pallets.
 pub use bizix_core;
 pub use pallet_company_registry;
+use pallet_company_registry_rpc_runtime_api::CompanyRegistryApi as CompanyRegistryRuntimeApi;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -272,6 +273,8 @@ impl pallet_company_registry::Config for Runtime {
     type EUID = BoundedVec<u8, ConstU32<32>>;
     type StareFirma = BoundedVec<u8, ConstU32<32>>;
     type AdresaCompleta = BoundedVec<u8, ConstU32<256>>;
+	type Currency = Balances; // Adăugați această linie
+    type QueryFee = ConstU128<1_000_000_000>; // cost interogare 1 token
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -545,6 +548,17 @@ impl_runtime_apis! {
 			BizixCore::current_proposal_id()
 		}
 	}
+
+	impl CompanyRegistryRuntimeApi<Block, AccountId, Balance> for Runtime {
+        fn get_company_data(cui: Vec<u8>) -> Option<Vec<u8>> {
+            let cui = BoundedVec::<u8, ConstU32<32>>::try_from(cui).ok()?;
+            CompanyRegistry::get_company_data(cui).map(|company| company.encode())
+        }
+
+        fn get_query_fee() -> Balance {
+            <CompanyRegistry as pallet_company_registry::Config>::QueryFee::get()
+        }
+    }
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
