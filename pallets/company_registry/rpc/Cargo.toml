@@ -20,11 +20,18 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
 	"derive",
 ] }
 
+serde = { version = "1.0", features = ["derive"] }
+
 jsonrpsee = { version = "0.22", features = ["client-core", "macros", "server"] }
 
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 sp-blockchain  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 sp-runtime  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
+scale-info = { version = "2.10.0", default-features = false, features = [
+	"derive",
+	"serde",
+] }
 
 #local package
 pallet-company-registry-rpc-runtime-api = { path = "./runtime-api" }
@@ -33,6 +40,7 @@ pallet-company-registry-rpc-runtime-api = { path = "./runtime-api" }
 default = ["std"]
 std = [
   "sp-api/std",
+  "sp-std/std",
   "sp-runtime/std",
   "pallet-company-registry-rpc-runtime-api/std"
 ]

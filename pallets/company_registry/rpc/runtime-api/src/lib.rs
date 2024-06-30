@@ -2,13 +2,26 @@
 
 use codec::Codec;
 use sp_std::vec::Vec;
+use scale_info::TypeInfo;
 
 sp_api::decl_runtime_apis! {
     pub trait CompanyRegistryApi<AccountId, Balance> where
-        AccountId: Codec,
-        Balance: Codec,
+        AccountId: Codec + TypeInfo,
+        Balance: Codec + TypeInfo,
     {
-        fn get_company_data(cui: Vec<u8>) -> Option<Vec<u8>>;
+        fn get_company_data(cui: u16) -> Option<Company<AccountId>>;
         fn get_query_fee() -> Balance;
     }
+}
+
+// definim structura Company aici pentru a fi compatibilă cu API-ul runtime
+#[derive(codec::Encode, codec::Decode, TypeInfo)]
+pub struct Company<AccountId> {
+    pub cui: u16,
+    pub denumire: Vec<u8>,
+    pub cod_inmatriculare: Vec<u8>,
+    pub euid: Vec<u8>,
+    pub stare_firma: Vec<u8>,
+    pub adresa_completa: Vec<u8>,
+    pub owner: Option<AccountId>,
 }

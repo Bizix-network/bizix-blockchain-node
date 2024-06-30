@@ -86,7 +86,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	 
 		// Tipuri de date
-		type CUI: Parameter + Member + Default + Clone;
+		type CUI: Parameter + Member + Default + Copy + From<u16> + Into<u16>;
 		type Denumire: Parameter + Member + Default + Clone;
 		type CodInmatriculare: Parameter + Member + Default + Clone;
 		type EUID: Parameter + Member + Default + Clone;

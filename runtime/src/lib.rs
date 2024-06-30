@@ -98,15 +98,15 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("bizix-runtime"),
-	impl_name: create_runtime_str!("bizix-runtime"),
+	spec_name: create_runtime_str!("bizix"),
+	impl_name: create_runtime_str!("bizix"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 80000,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -272,7 +272,7 @@ impl bizix_core::Config for Runtime {
 impl pallet_company_registry::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_company_registry::weights::SubstrateWeight<Runtime>;
-    type CUI = BoundedVec<u8, ConstU32<32>>;
+    type CUI = u16;
     type Denumire = BoundedVec<u8, ConstU32<128>>;
     type CodInmatriculare = BoundedVec<u8, ConstU32<32>>;
     type EUID = BoundedVec<u8, ConstU32<32>>;
@@ -555,9 +555,18 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_company_registry_rpc_runtime_api::CompanyRegistryApi<Block, AccountId, Balance> for Runtime {
-		fn get_company_data(cui: Vec<u8>) -> Option<Vec<u8>> {
-			let cui = BoundedVec::<u8, ConstU32<32>>::try_from(cui).ok()?;
-			pallet_company_registry::Pallet::<Runtime>::get_company_data(cui).map(|company| company.encode())
+		fn get_company_data(cui: u16) -> Option<pallet_company_registry_rpc_runtime_api::Company<AccountId>> {
+			CompanyRegistry::get_company_data(cui).map(|company| 
+				pallet_company_registry_rpc_runtime_api::Company {
+					cui: company.cui.into(),
+					denumire: company.denumire.into(),
+					cod_inmatriculare: company.cod_inmatriculare.into(),
+					euid: company.euid.into(),
+					stare_firma: company.stare_firma.into(),
+					adresa_completa: company.adresa_completa.into(),
+					owner: company.owner,
+				}
+			)
 		}
 	
 		fn get_query_fee() -> Balance {
