@@ -1,7 +1,7 @@
 [workspace.package]
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+authors = ["BiziX <https://github.com/Bizix-network/bizix-blockchain-node>"]
 edition = "2021"
-repository = "https://github.com/substrate-developer-hub/substrate-bizix-node/"
+repository = "https://github.com/Bizix-network/bizix-blockchain-node/"
 license = "MIT-0"
 homepage = "https://substrate.io"
 
@@ -9,6 +9,7 @@ homepage = "https://substrate.io"
 members = [
     "node",
     "pallets/bizix",
+    "pallets/company_registry",
     "runtime",
 ]
 resolver = "2"

@@ -845,6 +845,7 @@ dependencies = [
  "frame-system",
  "futures",
  "jsonrpsee",
+ "pallet-company-registry-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
@@ -894,6 +895,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-company-registry",
+ "pallet-company-registry-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-sudo",
  "pallet-timestamp",
@@ -4986,6 +4988,27 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-v1.9.0)",
+]
+
+[[package]]
+name = "pallet-company-registry-rpc"
+version = "0.0.1"
+dependencies = [
+ "jsonrpsee",
+ "pallet-company-registry-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-company-registry-rpc-runtime-api"
+version = "0.0.1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-v1.9.0)",
 ]
 

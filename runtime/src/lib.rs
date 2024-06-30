@@ -22,8 +22,7 @@ use frame_support::genesis_builder_helper::{build_config, create_default_config}
 pub use frame_support::{
 	construct_runtime, derive_impl, parameter_types,
 	traits::{
-		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness,
-		StorageInfo,
+		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, StorageInfo,
 	},
 	weights::{
 		constants::{
@@ -42,9 +41,15 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+//utile Bizix
+pub use frame_support::traits::Currency;
+pub use frame_support::traits::Get;
+pub use sp_core::Encode;
+
 /// Import the bizix pallets.
 pub use bizix_core;
 pub use pallet_company_registry;
+
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -93,8 +98,8 @@ pub mod opaque {
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("solochain-template-runtime"),
-	impl_name: create_runtime_str!("solochain-template-runtime"),
+	spec_name: create_runtime_str!("bizix-runtime"),
+	impl_name: create_runtime_str!("bizix-runtime"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -146,10 +151,11 @@ parameter_types! {
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
 
-	// Tipuri de date pentru bizix-core
+	// Tipuri de date pentru bizix
     pub const MaxIpfsAddressLength: u32 = 256;
     pub const MaxAppNameLength: u32 = 128;
     pub const MaxAppVersionLength: u32 = 32;
+	pub const CompanyRegistryQueryFee: Balance = 1_000_000_000;
 }
 
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
@@ -272,6 +278,8 @@ impl pallet_company_registry::Config for Runtime {
     type EUID = BoundedVec<u8, ConstU32<32>>;
     type StareFirma = BoundedVec<u8, ConstU32<32>>;
     type AdresaCompleta = BoundedVec<u8, ConstU32<256>>;
+    type Currency = Balances;
+    type QueryFee = CompanyRegistryQueryFee;// cost interogare 1 token
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -317,7 +325,7 @@ mod runtime {
 	pub type BizixCore = bizix_core;
 
 	#[runtime::pallet_index(8)]
-pub type CompanyRegistry = pallet_company_registry;
+	pub type CompanyRegistry = pallet_company_registry;
 }
 
 /// The address format for describing accounts.
@@ -543,6 +551,17 @@ impl_runtime_apis! {
 	impl bizix_core_runtime_api::BizixApi<Block> for Runtime {
 		fn get_value() -> u32 {
 			BizixCore::current_proposal_id()
+		}
+	}
+
+	impl pallet_company_registry_rpc_runtime_api::CompanyRegistryApi<Block, AccountId, Balance> for Runtime {
+		fn get_company_data(cui: Vec<u8>) -> Option<Vec<u8>> {
+			let cui = BoundedVec::<u8, ConstU32<32>>::try_from(cui).ok()?;
+			pallet_company_registry::Pallet::<Runtime>::get_company_data(cui).map(|company| company.encode())
+		}
+	
+		fn get_query_fee() -> Balance {
+			<Runtime as pallet_company_registry::Config>::QueryFee::get()
 		}
 	}
 

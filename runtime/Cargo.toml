@@ -68,6 +68,7 @@ sp-genesis-builder = { default-features = false, git = "https://github.com/parit
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 bizix-core-runtime-api = { path = "../pallets/bizix/rpc/runtime-api", default-features = false }
+pallet-company-registry-rpc-runtime-api = { path = "../pallets/company_registry/rpc/runtime-api", default-features = false }
 
 # Used for runtime benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false, optional = true }
@@ -95,6 +96,8 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-try-runtime?/std",
 	"bizix-core-runtime-api/std",
+	"pallet-company-registry-rpc-runtime-api/std",
+	"pallet-company-registry/std",
 
 	"pallet-aura/std",
 	"pallet-balances/std",

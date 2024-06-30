@@ -1,10 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// Here we declare the runtime API. It is implemented it the `impl` block in
-// runtime file (the `runtime-api/src/lib.rs`)
+use codec::Codec;
+use sp_std::vec::Vec;
+
 sp_api::decl_runtime_apis! {
-	pub trait BizixApi {
-		fn get_value() -> u32;
-		//fn get_value(at: Option<Hash>) -> u32;
-	}
+    pub trait CompanyRegistryApi<AccountId, Balance> where
+        AccountId: Codec,
+        Balance: Codec,
+    {
+        fn get_company_data(cui: Vec<u8>) -> Option<Vec<u8>>;
+        fn get_query_fee() -> Balance;
+    }
 }
