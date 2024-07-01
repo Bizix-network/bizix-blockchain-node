@@ -50,6 +50,13 @@ pub use sp_core::Encode;
 pub use bizix_core;
 pub use pallet_company_registry;
 
+// Imports the treasury pallet
+use frame_system::EnsureRoot;
+use frame_support::PalletId;
+use sp_runtime::traits::IdentityLookup;
+use frame_support::traits::tokens::{Pay, PaymentStatus};
+
+pub use pallet_treasury;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -282,6 +289,82 @@ impl pallet_company_registry::Config for Runtime {
     type QueryFee = CompanyRegistryQueryFee;// cost interogare 1 token
 }
 
+// Implementarea modulului Paymaster
+use sp_runtime::DispatchError;
+pub struct TreasuryPaymaster;
+impl Pay for TreasuryPaymaster {
+    type Beneficiary = AccountId;
+    type AssetKind = ();
+    type Balance = Balance;
+    type Error = DispatchError;
+    type Id = u64;
+
+    fn pay(
+        who: &Self::Beneficiary,
+        _asset_kind: Self::AssetKind,
+        amount: Self::Balance,
+    ) -> Result<Self::Id, Self::Error> {
+        let treasury_account = <pallet_treasury::Pallet<Runtime>>::account_id();
+        Ok(0) // Returnăm un ID simplu
+    }
+
+    fn check_payment(_id: Self::Id) -> PaymentStatus {
+        // Presupunem că toate plățile sunt reușite imediat
+        PaymentStatus::Success
+    }
+}
+
+//Implementarea modulului AssetBalanceConverter
+use frame_support::traits::tokens::ConversionFromAssetBalance;
+pub struct AssetBalanceConverter;
+impl ConversionFromAssetBalance<Balance, (), Balance> for AssetBalanceConverter {
+    type Error = ();
+
+    fn from_asset_balance(balance: Balance, _asset_kind: ()) -> Result<Balance, Self::Error> {
+        // Aici, presupunem că balanta activului este identică cu balanta nativa
+        Ok(balance)
+    }
+}
+
+// Configure the treasury pallet
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 1_000_000_000;
+	pub const SpendPeriod: BlockNumber = DAYS;
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TipCountdown: BlockNumber = DAYS;
+	pub const MinimumTip: Balance = 1_000_000_000;
+	pub const MaxApprovals: u32 = 100;
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+}
+
+impl pallet_treasury::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();  // Funds are burned.
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	type MaxApprovals = MaxApprovals;
+
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type OnSlash = ();
+	type ProposalBondMaximum = ();
+	type PalletId = TreasuryPalletId;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
+	type AssetKind = ();
+	type Beneficiary = AccountId; 
+	type BeneficiaryLookup = IdentityLookup<Self::AccountId>; 
+	type Paymaster = TreasuryPaymaster;
+	type BalanceConverter = AssetBalanceConverter;
+	type PayoutPeriod = ();
+}	
+
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -326,6 +409,10 @@ mod runtime {
 
 	#[runtime::pallet_index(8)]
 	pub type CompanyRegistry = pallet_company_registry;
+
+	// Include the treasury pallet
+	#[runtime::pallet_index(9)]
+	pub type Treasury = pallet_treasury;
 }
 
 /// The address format for describing accounts.
@@ -377,6 +464,7 @@ mod benches {
 		[pallet_sudo, Sudo]
 		[bizix_core, BizixCore]
 		[pallet_company_registry, CompanyRegistry]
+		[pallet_treasury, Treasury]
 	);
 }
 

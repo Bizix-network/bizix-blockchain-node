@@ -74,6 +74,9 @@ pallet-company-registry-rpc-runtime-api = { path = "../pallets/company_registry/
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false, optional = true }
 
+# Extra pallets
+pallet-treasury = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
+
 # local pallets
 bizix-core = { path = "../pallets/bizix", default-features = false }
 pallet-company-registry = { path = "../pallets/company_registry", default-features = false }
@@ -98,6 +101,7 @@ std = [
 	"bizix-core-runtime-api/std",
 	"pallet-company-registry-rpc-runtime-api/std",
 	"pallet-company-registry/std",
+	"pallet-treasury/std",
 
 	"pallet-aura/std",
 	"pallet-balances/std",

@@ -58,6 +58,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 	.build())
 }
 
+
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::builder(
 		WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
