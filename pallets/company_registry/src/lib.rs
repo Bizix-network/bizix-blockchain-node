@@ -256,14 +256,15 @@ pub mod pallet {
 
    // Implementare separată pentru metodele interne
 	impl<T: Config> Pallet<T> {
-		pub fn get_company_data(cui: T::CUI) -> Option<Company<T>> {
-			Companies::<T>::get(cui)
-		}
-
-		pub fn do_query(querier: T::AccountId) -> DispatchResult {
+		pub fn get_company_data(cui: T::CUI, caller: T::AccountId) -> Option<Company<T>> {
 			let fee = T::QueryFee::get();
-			T::Currency::withdraw(&querier, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive)?;
-			Ok(())
+			let withdraw_result = T::Currency::withdraw(&caller, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive);
+			
+			if withdraw_result.is_ok() {
+				Companies::<T>::get(cui)
+			} else {
+				None
+			}
 		}
 	}
 }

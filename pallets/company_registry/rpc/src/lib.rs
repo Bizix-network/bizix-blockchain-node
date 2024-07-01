@@ -17,7 +17,7 @@ use sp_runtime::traits::MaybeDisplay;
 #[rpc(client, server)]
 pub trait CompanyRegistryApi<BlockHash, AccountId, Balance> {
     #[method(name = "companyRegistry_getCompanyData")]
-    fn get_company_data(&self, cui: u16, at: Option<BlockHash>) -> RpcResult<Option<CompanyData>>;
+    fn get_company_data(&self, cui: u16, caller: AccountId, at: Option<BlockHash>) -> RpcResult<Option<CompanyData>>;
 
     #[method(name = "companyRegistry_getQueryFee")]
     fn get_query_fee(&self, at: Option<BlockHash>) -> RpcResult<Balance>;
@@ -57,11 +57,11 @@ where
     AccountId: Codec + Clone + sp_std::fmt::Display + scale_info::TypeInfo,
     Balance: Codec + scale_info::TypeInfo,
 {
-    fn get_company_data(&self, cui: u16, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Option<CompanyData>> {
+     fn get_company_data(&self, cui: u16, caller: AccountId, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Option<CompanyData>> {
         let api = self.client.runtime_api();
         let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-        let company = api.get_company_data(at, cui).map_err(|err| {
+        let company = api.get_company_data(at, cui, caller).map_err(|err| {
             ErrorObject::owned(
                 RUNTIME_ERROR,
                 "Unable to query company data",

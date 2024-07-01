@@ -9,7 +9,7 @@ sp_api::decl_runtime_apis! {
         AccountId: Codec + TypeInfo,
         Balance: Codec + TypeInfo,
     {
-        fn get_company_data(cui: u16) -> Option<Company<AccountId>>;
+        fn get_company_data(cui: u16, caller: AccountId) -> Option<Company<AccountId>>;
         fn get_query_fee() -> Balance;
     }
 }
