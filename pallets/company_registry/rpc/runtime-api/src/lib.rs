@@ -11,6 +11,8 @@ sp_api::decl_runtime_apis! {
     {
         fn get_company_data(cui: u16, caller: AccountId) -> Option<Company<AccountId>>;
         fn get_query_fee() -> Balance;
+        fn has_paid_for_company_data(caller: AccountId, cui: u16) -> bool;
+        fn get_company_data_if_paid(caller: AccountId, cui: u16) -> Option<Company<AccountId>>;
     }
 }
 

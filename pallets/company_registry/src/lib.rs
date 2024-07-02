@@ -119,6 +119,10 @@ pub mod pallet {
 	   pub owner: Option<T::AccountId>,
    }
 
+   	#[pallet::storage]
+	#[pallet::getter(fn paid_queries)]
+	pub type PaidQueries<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Blake2_128Concat, T::CUI, BlockNumberFor<T>>;
+
    #[pallet::event]
    #[pallet::generate_deposit(pub(super) fn deposit_event)]
    pub enum Event<T: Config> {
@@ -126,7 +130,7 @@ pub mod pallet {
 	   CompanyUpdated { cui: T::CUI, sender: T::AccountId },
 	   CompanyClaimed { cui: T::CUI, owner: T::AccountId },
 	   CompanyOwnershipTransferred { cui: T::CUI, new_owner: T::AccountId },
-	   CompanyDataQueried { cui: T::CUI, caller: T::AccountId },
+	   CompanyDataPaidFor { cui: T::CUI, caller: T::AccountId },
    }
 
    #[pallet::error]
@@ -256,33 +260,34 @@ pub mod pallet {
 	   }
 
 	   #[pallet::call_index(4)]
-		#[pallet::weight(10_000)]
-		pub fn get_company_data_paid(
-			origin: OriginFor<T>,
-			cui: T::CUI,
-		) -> DispatchResultWithPostInfo {
-			let caller = ensure_signed(origin)?;
-
-			// Verifică dacă compania există
-			let company = Companies::<T>::get(cui).ok_or(Error::<T>::CompanyNotFound)?;
-
-			// Extrage taxa de interogare
-			let fee = T::QueryFee::get();
-			
-			// Încasează taxa
-			T::Currency::withdraw(&caller, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive)?;
-
-			// Returnează datele companiei
-			Self::deposit_event(Event::CompanyDataQueried { cui, caller: caller.clone() });
-
-			Ok(().into())
-		}
+	   #[pallet::weight(10_000)]
+	   pub fn pay_for_company_data(
+		   origin: OriginFor<T>,
+		   cui: T::CUI,
+	   ) -> DispatchResult {
+		   let caller = ensure_signed(origin)?;
+   
+		   ensure!(Companies::<T>::contains_key(&cui), Error::<T>::CompanyNotFound);
+   
+		   let fee = T::QueryFee::get();
+		   T::Currency::withdraw(&caller, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive)?;
+   
+		   let current_block = <frame_system::Pallet<T>>::block_number();
+		   PaidQueries::<T>::insert(&caller, &cui, current_block);
+   
+		   Self::deposit_event(Event::CompanyDataPaidFor { cui, caller: caller.clone() });
+   
+		   Ok(())
+	   }
    }
 
    // Implementare separată pentru metodele interne
 	impl<T: Config> Pallet<T> {
 		pub fn get_company_data(cui: T::CUI, caller: T::AccountId) -> Option<Company<T>> {
 			Companies::<T>::get(cui)
+		}
+		pub fn has_paid_for_company_data(caller: T::AccountId, cui: T::CUI) -> bool {
+			PaidQueries::<T>::contains_key(caller, cui)
 		}
 	}
 }

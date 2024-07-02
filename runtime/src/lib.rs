@@ -660,6 +660,29 @@ impl_runtime_apis! {
 		fn get_query_fee() -> Balance {
 			<Runtime as pallet_company_registry::Config>::QueryFee::get()
 		}
+
+		fn has_paid_for_company_data(caller: AccountId, cui: u16) -> bool {
+			CompanyRegistry::has_paid_for_company_data(caller, cui.into())
+		}
+
+		fn get_company_data_if_paid(caller: AccountId, cui: u16) -> Option<pallet_company_registry_rpc_runtime_api::Company<AccountId>> {
+			if Self::has_paid_for_company_data(caller.clone(), cui) {
+				CompanyRegistry::get_company_data(cui.into(), caller).map(|company| 
+					pallet_company_registry_rpc_runtime_api::Company {
+						cui: company.cui.into(),
+						denumire: company.denumire.into(),
+						cod_inmatriculare: company.cod_inmatriculare.into(),
+						euid: company.euid.into(),
+						stare_firma: company.stare_firma.into(),
+						adresa_completa: company.adresa_completa.into(),
+						owner: company.owner,
+					}
+				)
+			} else {
+				None
+			}
+		}
+
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]

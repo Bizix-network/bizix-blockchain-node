@@ -21,6 +21,9 @@ pub trait CompanyRegistryApi<BlockHash, AccountId, Balance> {
 
     #[method(name = "companyRegistry_getQueryFee")]
     fn get_query_fee(&self, at: Option<BlockHash>) -> RpcResult<Balance>;
+
+    #[method(name = "companyRegistry_getCompanyDataIfPaid")]
+    fn get_company_data_if_paid(&self, cui: u16, caller: AccountId, at: Option<BlockHash>) -> RpcResult<Option<CompanyData>>;
 }
 
 pub struct CompanyRegistry<C, Block> {
@@ -62,6 +65,43 @@ where
         let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
         let company = api.get_company_data(at, cui, caller).map_err(|err| {
+            ErrorObject::owned(
+                RUNTIME_ERROR,
+                "Unable to query company data",
+                Some(format!("{:?}", err)),
+            )
+        })?;
+
+        Ok(company.map(|c| CompanyData {
+            cui: c.cui,
+            denumire: String::from_utf8_lossy(&c.denumire).into_owned(),
+            cod_inmatriculare: String::from_utf8_lossy(&c.cod_inmatriculare).into_owned(),
+            euid: String::from_utf8_lossy(&c.euid).into_owned(),
+            stare_firma: String::from_utf8_lossy(&c.stare_firma).into_owned(),
+            adresa_completa: String::from_utf8_lossy(&c.adresa_completa).into_owned(),
+            owner: c.owner.map(|a| a.to_string()),
+        }))
+    }
+
+    fn get_company_data_if_paid(&self, cui: u16, caller: AccountId, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Option<CompanyData>> {
+        let api = self.client.runtime_api();
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+        // Verifică dacă caller-ul a plătit pentru aceste date specifice
+        let has_paid = api.has_paid_for_company_data(at, caller.clone(), cui).map_err(|err| {
+            ErrorObject::owned(
+                RUNTIME_ERROR,
+                "Unable to check payment status",
+                Some(format!("{:?}", err)),
+            )
+        })?;
+
+        if !has_paid {
+            return Ok(None);
+        }
+
+        // Dacă a plătit, obține datele companiei
+        let company = api.get_company_data_if_paid(at, caller, cui).map_err(|err| {
             ErrorObject::owned(
                 RUNTIME_ERROR,
                 "Unable to query company data",
