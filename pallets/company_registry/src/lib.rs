@@ -94,6 +94,7 @@ pub mod pallet {
 		type AdresaCompleta: Parameter + Member + Default + Clone;
 	
 		type Currency: Currency<Self::AccountId>;
+		#[pallet::constant]
 		type QueryFee: Get<BalanceOf<Self>>;
 	}
 
@@ -125,6 +126,7 @@ pub mod pallet {
 	   CompanyUpdated { cui: T::CUI, sender: T::AccountId },
 	   CompanyClaimed { cui: T::CUI, owner: T::AccountId },
 	   CompanyOwnershipTransferred { cui: T::CUI, new_owner: T::AccountId },
+	   CompanyDataQueried { cui: T::CUI, caller: T::AccountId },
    }
 
    #[pallet::error]
@@ -252,19 +254,35 @@ pub mod pallet {
 		   Self::deposit_event(Event::CompanyOwnershipTransferred { cui, new_owner });
 		   Ok(())
 	   }
+
+	   #[pallet::call_index(4)]
+		#[pallet::weight(10_000)]
+		pub fn get_company_data_paid(
+			origin: OriginFor<T>,
+			cui: T::CUI,
+		) -> DispatchResultWithPostInfo {
+			let caller = ensure_signed(origin)?;
+
+			// Verifică dacă compania există
+			let company = Companies::<T>::get(cui).ok_or(Error::<T>::CompanyNotFound)?;
+
+			// Extrage taxa de interogare
+			let fee = T::QueryFee::get();
+			
+			// Încasează taxa
+			T::Currency::withdraw(&caller, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive)?;
+
+			// Returnează datele companiei
+			Self::deposit_event(Event::CompanyDataQueried { cui, caller: caller.clone() });
+
+			Ok(().into())
+		}
    }
 
    // Implementare separată pentru metodele interne
 	impl<T: Config> Pallet<T> {
 		pub fn get_company_data(cui: T::CUI, caller: T::AccountId) -> Option<Company<T>> {
-			let fee = T::QueryFee::get();
-			let withdraw_result = T::Currency::withdraw(&caller, fee, WithdrawReasons::FEE, ExistenceRequirement::KeepAlive);
-			
-			if withdraw_result.is_ok() {
-				Companies::<T>::get(cui)
-			} else {
-				None
-			}
+			Companies::<T>::get(cui)
 		}
 	}
 }

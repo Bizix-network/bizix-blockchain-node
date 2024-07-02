@@ -644,20 +644,6 @@ impl_runtime_apis! {
 
 	impl pallet_company_registry_rpc_runtime_api::CompanyRegistryApi<Block, AccountId, Balance> for Runtime {
 		fn get_company_data(cui: u16, caller: AccountId) -> Option<pallet_company_registry_rpc_runtime_api::Company<AccountId>> {
-			// Extrage taxa de interogare
-			let fee = <Runtime as pallet_company_registry::Config>::QueryFee::get();
-			
-			// Încearcă să extragă taxa din contul apelantului
-			if let Err(_) = <Runtime as pallet_company_registry::Config>::Currency::withdraw(
-				&caller,
-				fee,
-				frame_support::traits::WithdrawReasons::FEE,
-				frame_support::traits::ExistenceRequirement::KeepAlive
-			) {
-				return None; // Returnează None dacă taxa nu poate fi extrasă
-			}
-	
-			// Dacă taxa a fost extrasă cu succes, preia datele companiei
 			CompanyRegistry::get_company_data(cui.into(), caller).map(|company| 
 				pallet_company_registry_rpc_runtime_api::Company {
 					cui: company.cui.into(),
