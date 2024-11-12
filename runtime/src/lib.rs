@@ -57,6 +57,8 @@ use sp_runtime::traits::IdentityLookup;
 use frame_support::traits::tokens::{Pay, PaymentStatus};
 
 pub use pallet_treasury;
+use pallet_collective::{self, PrimeDefaultVote};
+
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -163,6 +165,15 @@ parameter_types! {
     pub const MaxAppNameLength: u32 = 128;
     pub const MaxAppVersionLength: u32 = 32;
 	pub const CompanyRegistryQueryFee: Balance = 1_000_000_000;
+
+	pub const TechnicalMotionDuration: BlockNumber = 5 * DAYS;
+    pub const TechnicalMaxProposals: u32 = 100;
+    pub const TechnicalMaxMembers: u32 = 100;
+	pub const TechnicalMinimumMembers: u32 = 3;
+	
+
+	// From system config trait impl.
+	pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
@@ -265,6 +276,7 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+
 // Configure the bizix-core in pallets/bizix.
 impl bizix_core::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -274,6 +286,9 @@ impl bizix_core::Config for Runtime {
     type ApplicationVersion = Vec<u8>;
     type ProposalPrice = Balance;
     type ProxmoxTemplateID = u32;
+    type TechnicalCommittee = EnsureRoot<AccountId>;
+	//TO DO: type TechnicalCommittee = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
+	type Currency = Balances;
 }
 
 impl pallet_company_registry::Config for Runtime {
@@ -364,6 +379,24 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = ();
 }	
 
+impl pallet_collective::Config for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = TechnicalMotionDuration;
+    type MaxProposals = TechnicalMaxProposals;
+    type MaxMembers = TechnicalMaxMembers;
+    type DefaultVote = PrimeDefaultVote;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type MaxProposalWeight = MaxCollectivesProposalWeight;
+}
+
+
+// Definește un tip pentru TechnicalCollective
+pub type TechnicalCollective = pallet_collective::Instance2;
+
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
@@ -413,6 +446,9 @@ mod runtime {
 	// Include the treasury pallet
 	#[runtime::pallet_index(9)]
 	pub type Treasury = pallet_treasury;
+
+	#[runtime::pallet_index(10)]
+	pub type TechnicalCommittee = pallet_collective;
 }
 
 /// The address format for describing accounts.

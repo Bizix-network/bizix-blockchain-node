@@ -76,6 +76,7 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk.
 
 # Extra pallets
 pallet-treasury = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0", default-features = false }
 
 # local pallets
 bizix-core = { path = "../pallets/bizix", default-features = false }
@@ -102,6 +103,7 @@ std = [
 	"pallet-company-registry-rpc-runtime-api/std",
 	"pallet-company-registry/std",
 	"pallet-treasury/std",
+	"pallet-collective/std",
 
 	"pallet-aura/std",
 	"pallet-balances/std",

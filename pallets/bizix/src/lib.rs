@@ -68,6 +68,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
+	use frame_support::traits::{Currency, ReservableCurrency};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -89,6 +90,9 @@ pub mod pallet {
 	   type ProposalPrice: Parameter + Member + Default + Copy;
 	   type ProxmoxTemplateID: Parameter + Member + Default + Clone;
 	   //type TechnicalCouncilOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+	  
+	   type TechnicalCommittee: EnsureOrigin<Self::RuntimeOrigin>;
+	   type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
    }
 
    #[pallet::pallet]
@@ -128,6 +132,10 @@ pub mod pallet {
    #[pallet::getter(fn current_proposal_id)]
    pub type CurrentProposalId<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+   #[pallet::storage]
+   #[pallet::getter(fn votes)]
+   pub type Votes<T: Config> = StorageMap<_, Blake2_128Concat, u32, Vec<T::AccountId>>;
+
    #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
     pub struct Proposal<T: Config> {
@@ -157,13 +165,20 @@ pub mod pallet {
         ProposalRejected {
             proposal_id: u32,
         },
-		
+        ProposalStatusChanged {
+            proposal_id: u32,
+            old_status: ProposalStatusEnum,
+            new_status: ProposalStatusEnum,
+        },
     }
 
    // Erori
    #[pallet::error]
    pub enum Error<T> {
 	   ProposalNotFound,
+	   AlreadyVoted,
+	   InvalidProposalStatus,
+	   InsufficientFunds,
    }
 
    // Enumerare pentru statusul unei propuneri
@@ -284,6 +299,106 @@ pub mod pallet {
 		   // Emite un eveniment sau returnează rezultatele printr-o cale adecvată
 		   // (de exemplu, printr-un RPC personalizat)
    
+		   Ok(())
+	   }
+
+	   #[pallet::call_index(4)]
+	   #[pallet::weight(10_000)]
+	   pub fn vote_on_proposal(
+		   origin: OriginFor<T>,
+		   proposal_id: u32,
+		   approve: bool
+	   ) -> DispatchResult {
+		   let sender = ensure_signed(origin)?;
+
+		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> DispatchResult {
+			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			   ensure!(proposal.status == ProposalStatusEnum::InDiscussion, Error::<T>::InvalidProposalStatus);
+
+			   Votes::<T>::try_mutate(proposal_id, |voters| -> DispatchResult {
+				   let voters = voters.get_or_insert_with(Vec::new);
+				   ensure!(!voters.contains(&sender), Error::<T>::AlreadyVoted);
+
+				   if approve {
+					   voters.push(sender.clone());
+				   }
+				   Ok(())
+			   })?;
+
+			   Ok(())
+		   })?;
+
+		   Ok(())
+	   }
+
+	   #[pallet::call_index(5)]
+	   #[pallet::weight(10_000)]
+	   pub fn close_voting(
+		   origin: OriginFor<T>,
+		   proposal_id: u32
+	   ) -> DispatchResult {
+		   T::TechnicalCommittee::ensure_origin(origin)?;
+
+		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> DispatchResult {
+			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			   ensure!(proposal.status == ProposalStatusEnum::InDiscussion, Error::<T>::InvalidProposalStatus);
+
+			   let voters = Votes::<T>::get(proposal_id).unwrap_or_default();
+			   let total_votes = voters.len() as u32;
+			   
+			   // Definim pragul de aprobare (de exemplu 50%)
+			   let approval_threshold = 1; // Temporar setat la 1 pentru testare
+
+			   if total_votes >= approval_threshold {
+				   proposal.status = ProposalStatusEnum::Approved;
+				   Self::deposit_event(Event::ProposalApproved { proposal_id });
+			   } else {
+				   proposal.status = ProposalStatusEnum::Rejected;
+				   Self::deposit_event(Event::ProposalRejected { proposal_id });
+			   }
+
+			   Ok(())
+		   })?;
+
+		   Ok(())
+	   }
+
+	   #[pallet::call_index(6)]
+	   #[pallet::weight(10_000)]
+	   pub fn change_proposal_status(
+		   origin: OriginFor<T>,
+		   proposal_id: u32,
+		   new_status: ProposalStatusEnum
+	   ) -> DispatchResult {
+		   // Verifică dacă apelantul face parte din comitetul tehnic
+		   T::TechnicalCommittee::ensure_origin(origin)?;
+
+		   // Salvăm statusul vechi înainte de modificare
+		   let old_status = Proposals::<T>::get(proposal_id)
+			   .ok_or(Error::<T>::ProposalNotFound)?
+			   .status;
+
+		   // Actualizează statusul propunerii
+		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> DispatchResult {
+			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			   
+			   // Opțional: poți adăuga validări suplimentare pentru tranziții permise
+			   match (proposal.status.clone(), new_status.clone()) {
+				   (ProposalStatusEnum::New, ProposalStatusEnum::InDiscussion) => {
+					   proposal.status = new_status.clone();
+					   Ok(())
+				   },
+				   _ => Err(Error::<T>::InvalidProposalStatus.into())
+			   }
+		   })?;
+
+		   // Emite un eveniment pentru schimbarea statusului
+		   Self::deposit_event(Event::ProposalStatusChanged { 
+			   proposal_id,
+			   old_status,
+			   new_status 
+		   });
+
 		   Ok(())
 	   }
    }

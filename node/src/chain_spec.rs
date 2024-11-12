@@ -55,9 +55,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		],
 		true,
 	))
+	.with_properties(get_properties("BIZ", 12))  // Adăugăm simbolul și zecimalele token-ului
 	.build())
 }
-
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::builder(
@@ -89,6 +89,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		],
 		true,
 	))
+	.with_properties(get_properties("BIZ", 12))  // Adăugăm simbolul și zecimalele token-ului
 	.build())
 }
 
@@ -115,4 +116,12 @@ fn testnet_genesis(
 			"key": Some(root_key),
 		},
 	})
+}
+
+/// Add token properties (symbol and decimals) to the chain spec.
+fn get_properties(symbol: &str, decimals: u32) -> serde_json::map::Map<String, serde_json::Value> {
+	let mut properties = serde_json::map::Map::new();
+	properties.insert("tokenSymbol".into(), symbol.into());
+	properties.insert("tokenDecimals".into(), decimals.into());
+	properties
 }
