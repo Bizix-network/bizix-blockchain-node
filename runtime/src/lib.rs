@@ -59,6 +59,12 @@ use frame_support::traits::tokens::{Pay, PaymentStatus};
 pub use pallet_treasury;
 use pallet_collective::{self, PrimeDefaultVote};
 
+use pallet_identity::legacy::IdentityInfo;
+use pallet_identity::RegistrarIndex;
+
+// Definește constantele pentru unități
+pub const MILLIUNIT: Balance = 1_000_000_000_000_000; // 10^15
+pub const UNITS: Balance = 1_000 * MILLIUNIT;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -379,6 +385,67 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = ();
 }	
 
+parameter_types! {
+    // Depozite pentru identitate
+    pub const BasicDeposit: Balance = 10 * UNITS;          // 10 tokens pentru o identitate de bază
+    pub const ByteDeposit: Balance = MILLIUNIT;            // Cost pe byte pentru informații
+    pub const SubAccountDeposit: Balance = 2 * UNITS;      // Cost pentru sub-conturi
+    
+    // Limite pentru identitate
+    pub const MaxSubAccounts: u32 = 100;
+    pub const MaxAdditionalFields: u32 = 10;
+    pub const MaxRegistrars: u32 = 20;
+
+    // Username specific (opțional)
+    pub const MaxSuffixLength: u32 = 64;
+    pub const MaxUsernameLength: u32 = 32;
+    pub const PendingUsernameExpiration: BlockNumber = 30 * DAYS;
+
+	// Limita pentru câmpurile suplimentare în identitate
+    pub const FieldLimit: u32 = 10; // Corespunde cu MaxAdditionalFields
+}
+
+// Definire pentru semnătura offline și cheia publică
+type OffchainSignature = MultiSignature;
+type SigningPublicKey = <OffchainSignature as Verify>::Signer;
+
+impl pallet_identity::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type BasicDeposit = BasicDeposit;
+    type ByteDeposit = ByteDeposit;
+    type SubAccountDeposit = SubAccountDeposit;
+    type MaxSubAccounts = MaxSubAccounts;
+    type MaxRegistrars = MaxRegistrars;
+
+    // Origine pentru registrari (doar root poate adăuga registrari)
+    type RegistrarOrigin = EnsureRoot<AccountId>;
+    
+    // Origine pentru forțarea anumitor acțiuni (de obicei root)
+    type ForceOrigin = EnsureRoot<AccountId>;
+    
+    // Origine pentru autoritatea de username (opțional)
+    type UsernameAuthorityOrigin = EnsureRoot<AccountId>;
+
+    // Informații pentru identitate
+	type IdentityInformation = IdentityInfo<FieldLimit>;
+
+    // Semnătură offline și cheie publică
+    type OffchainSignature = OffchainSignature;
+    type SigningPublicKey = SigningPublicKey;
+
+    // Limite pentru username
+    type MaxSuffixLength = MaxSuffixLength;
+    type MaxUsernameLength = MaxUsernameLength;
+    type PendingUsernameExpiration = PendingUsernameExpiration;
+
+    // Callback pentru slash (opțional)
+    type Slashed = ();
+
+    // Greutăți pentru benchmark
+    type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_collective::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
@@ -449,6 +516,9 @@ mod runtime {
 
 	#[runtime::pallet_index(10)]
 	pub type TechnicalCommittee = pallet_collective;
+
+	#[runtime::pallet_index(11)]
+	pub type Identity = pallet_identity;
 }
 
 /// The address format for describing accounts.
@@ -501,6 +571,7 @@ mod benches {
 		[bizix_core, BizixCore]
 		[pallet_company_registry, CompanyRegistry]
 		[pallet_treasury, Treasury]
+		[pallet_identity, Identity]
 	);
 }
 
