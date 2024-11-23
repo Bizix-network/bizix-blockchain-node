@@ -159,9 +159,14 @@ pub mod pallet {
             version: T::ApplicationVersion,
             template_id: T::ProxmoxTemplateID,
         },
-        ProposalApproved {
-            proposal_id: u32,
-        },
+		ProposalApproved {
+			proposal_id: u32,
+			who: T::AccountId,
+			ipfs_address: T::IPFSAddress,
+			name: T::ApplicationName,
+			version: T::ApplicationVersion,
+			template_id: T::ProxmoxTemplateID,
+		},
         ProposalRejected {
             proposal_id: u32,
         },
@@ -243,24 +248,29 @@ pub mod pallet {
 	   #[pallet::call_index(1)]
 	   #[pallet::weight(10_000)]
 	   pub fn approve_proposal(
-		   origin: OriginFor<T>,
-		   proposal_id: u32
-	   ) -> DispatchResult {
-		   // Verifică dacă apelantul este membru al consiliului tehnic
-		   // T::TechnicalCouncilOrigin::ensure_origin(origin)?;
-   
-		   // Obține propunerea și actualizează starea
-		   Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> Result<(), DispatchError> {
-			   let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
-			   proposal.status = ProposalStatusEnum::Approved;
-			   Ok(())
-		   })?;
-   
-		   Self::deposit_event(Event::ProposalApproved { proposal_id });
-   
-		   Ok(())
-	   }
-	   
+		origin: OriginFor<T>,
+		proposal_id: u32
+	) -> DispatchResult {
+		Proposals::<T>::try_mutate(proposal_id, |maybe_proposal| -> Result<(), DispatchError> {
+			let proposal = maybe_proposal.as_mut().ok_or(Error::<T>::ProposalNotFound)?;
+			proposal.status = ProposalStatusEnum::Approved;
+			
+			// Emite evenimentul cu toate detaliile propunerii
+			Self::deposit_event(Event::ProposalApproved {
+				proposal_id,
+				who: proposal.proposer.clone(),
+				ipfs_address: proposal.ipfs_address.clone(),
+				name: proposal.name.clone(),
+				version: proposal.version.clone(),
+				template_id: proposal.template_id.clone(),
+			});
+			
+			Ok(())
+		})?;
+	
+		Ok(())
+	}
+
 	   #[pallet::call_index(2)]
 	   #[pallet::weight(10_000)]
 	   pub fn reject_proposal(
@@ -351,7 +361,14 @@ pub mod pallet {
 
 			   if total_votes >= approval_threshold {
 				   proposal.status = ProposalStatusEnum::Approved;
-				   Self::deposit_event(Event::ProposalApproved { proposal_id });
+				   Self::deposit_event(Event::ProposalApproved { 
+                    proposal_id,
+                    who: proposal.proposer.clone(),
+                    ipfs_address: proposal.ipfs_address.clone(),
+                    name: proposal.name.clone(),
+                    version: proposal.version.clone(),
+                    template_id: proposal.template_id.clone()
+                });
 			   } else {
 				   proposal.status = ProposalStatusEnum::Rejected;
 				   Self::deposit_event(Event::ProposalRejected { proposal_id });
